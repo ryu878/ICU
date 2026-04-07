@@ -1,0 +1,10 @@
+---
+description: All project artifacts and AI responses must use English only.
+alwaysApply: true
+---
+
+# English-only language
+
+- Write and maintain **all** repository content in **English**: documentation, specifications, README files, comments in code, commit messages guidance, UI copy, API error messages intended for developers, and configuration notes.
+- When the user writes in another language, **reply in English** and produce or edit project files **in English** only.
+- Do not add or keep Russian or other non-English text in the codebase or docs unless it is user-generated data or a required legal quote.

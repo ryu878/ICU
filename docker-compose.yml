@@ -1,0 +1,63 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: icu
+      POSTGRES_PASSWORD: icu
+      POSTGRES_DB: icu
+    ports:
+      - "5432:5432"
+    volumes:
+      - icu_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U icu -d icu"]
+      interval: 3s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 5
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      ICU_DATABASE_URL: postgresql+asyncpg://icu:icu@postgres:5432/icu
+      ICU_DATABASE_URL_SYNC: postgresql+psycopg://icu:icu@postgres:5432/icu
+      ICU_REDIS_URL: redis://redis:6379/0
+      ICU_JWT_SECRET: ${ICU_JWT_SECRET:-dev-docker-jwt-secret-change-me}
+      ICU_OTP_PEPPER: ${ICU_OTP_PEPPER:-dev-docker-otp-pepper}
+      ICU_DEV_LOG_OTP: "true"
+      ICU_CORS_ORIGINS: "*"
+      ICU_RESEND_API_KEY: ${ICU_RESEND_API_KEY:-}
+      ICU_RESEND_FROM_EMAIL: ${ICU_RESEND_FROM_EMAIL:-}
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 45s
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  icu_pg:
